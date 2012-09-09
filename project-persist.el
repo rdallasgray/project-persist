@@ -28,16 +28,21 @@
 (defun project-persist-create ()
   "Create a new project-persist project, giving a project name and root directory."
   (interactive)
-    (let ((name nil)(dir nil))
-      (setq name (read-from-minibuffer "Project name: "))
-      (when (pp-project-exists name)
-        (ding)
-        (message "A project with that name already exists.")
-        (sit-for 1)
-        (project-persist-create))
-      (setq dir (ido-read-directory-name "Project root directory: "))
-      (pp-project-setup name dir)
-      (pp-project-open name)))
+  (condition-case err
+        (let ((dir (read-directory-name "Project root directory: ")))
+          (let ((name
+                 (read-from-minibuffer "Project name: "
+                                       (file-name-nondirectory (directory-file-name dir)))))
+            (message "dir: %s" dir)
+            (when (pp-project-exists name) (error "A project with that name already exists."))
+            (when (string= "" name) (error "Please enter a valid project name."))
+            (pp-project-setup name dir)
+            (pp-project-open name)))
+    (error (progn
+             (ding)
+             (message "%s" (error-message-string err))
+             (sit-for 1)
+             (project-persist-create)))))
 
 (defun project-persist-save ())
 
