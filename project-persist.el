@@ -42,24 +42,24 @@
 
 
 ;; Interactive functions
-(defun project-persist-create ()
+(defun project-persist-create (root-dir name)
   "Create a new project-persist project, giving a project name and root directory."
-  (interactive)
-  (condition-case err
-        (let ((root-dir (read-directory-name "Project root directory: ")))
-          (let ((name
-                 (read-from-minibuffer
-                  "Project name: "
-                  (file-name-nondirectory (directory-file-name root-dir)))))
-            (when (pp/project-exists name) (error "A project with that name already exists."))
-            (when (string= "" name) (error "Please enter a valid project name."))
-            (pp/project-setup name root-dir)
-            (pp/project-open name)))
-    (error (progn
-             (ding)
-             (message "%s" (error-message-string err))
-             (sit-for 1)
-             (project-persist-create)))))
+  (interactive
+   (let ((i-root-dir (read-directory-name "Project root directory: ")))
+     (let ((i-name
+            (read-from-minibuffer
+             "Project name: "
+             (file-name-nondirectory (directory-file-name i-root-dir)))))
+       (list i-root-dir i-name))))
+    (condition-case err
+        (progn
+          (pp/project-setup name root-dir)
+          (pp/project-open name))
+      (error (progn
+               (ding)
+               (message "%s" (error-message-string err))
+               (sit-for 1)
+               (project-persist-create)))))
 
 (defun project-persist-save (name root-dir))
 
@@ -73,6 +73,8 @@
 (defun pp/project-setup (name root-dir)
   "Set up a project with name name and root directory dir."
   (message (format "Creating project %s at root %s" name root-dir))
+  (if (string= name "") (error "Project name is empty"))
+  (if (pp/project-exists name) (error "Project %s already exists." name))
   (run-hooks 'project-persist-before-create-hook)
   (let ((settings-dir (pp/settings-dir-from-name name)))
     (pp/make-settings-dir settings-dir)
