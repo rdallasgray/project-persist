@@ -61,7 +61,7 @@
                (sit-for 1)
                (project-persist-create)))))
 
-(defun project-persist-save (name root-dir))
+(defun project-persist-save ())
 
 (defun project-persist-load (name))
 
@@ -72,7 +72,6 @@
 
 (defun pp/project-setup (name root-dir)
   "Set up a project with name name and root directory dir."
-  (message (format "Creating project %s at root %s" name root-dir))
   (if (string= name "") (error "Project name is empty"))
   (if (pp/project-exists name) (error "Project %s already exists." name))
   (run-hooks 'project-persist-before-create-hook)
@@ -82,9 +81,14 @@
     (run-hooks 'project-persist-after-create-hook)))
 
 (defun pp/project-write (name root-dir settings-dir)
-  (let ((settings `((project-name . ,name)(project-root-dir . ,root-dir))))
-   (with-temp-file (expand-file-name "pp-settings.txt" settings-dir)
-     (print settings (current-buffer)))))
+  (let ((settings `((project-name . ,name)(project-root-dir . ,root-dir)))
+        (settings-file (expand-file-name "pp-settings.txt" settings-dir)))
+    (with-temp-buffer
+      (print settings (current-buffer))
+      (pp/write-to-settings settings-file (buffer-string)))))
+
+(defun pp/write-to-settings (settings-file settings-string)
+  (with-temp-file settings-file (insert settings-string)))
 
 (defun pp/settings-dir-from-name (name)
   (concat (expand-file-name name project-persist-settings-dir)))
