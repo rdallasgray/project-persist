@@ -15,4 +15,10 @@ By default, only a project's name and root directory are saved, but you can easi
 
 Each element of the list is a cons cell with car a symbol naming the new setting and cdr a function to obtain the value of the setting. The function will be called during project creation and the setting's value saved as normal.
 
+The setting can be retrieved once a project is loaded by invoking:
+
+```lisp
+(pp/get-setting KEY)
+```
+
 Project-persist is intentionally lightweight, in the spirit of Emacs, so that it can be used to build a more complex project-management infrastructure tailored to your needs. Other packages, like the aforementioned Projectile, handle things like searching within a project, so there's no need to duplicate such functionality.
