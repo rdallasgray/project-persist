@@ -234,7 +234,7 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
           (while dirs
             (let ((dir (car dirs)))
               (when (not (or (equalp dir ".") (equalp dir "..")))
-                (let ((settings (pp/settings-gets-in-dirname dir)))
+                (let ((settings (pp/get-settings-in-dirname dir)))
                   (when settings
                     (add-to-list 'project-list (gethash 'name settings)))))
               (setq dirs (cdr dirs)))))
@@ -261,13 +261,13 @@ exists in the project settings directory, and a valid settings file exists withi
     (let ((settings-file (expand-file-name pp/settings-file-name settings-dir)))
       (file-exists-p settings-file))))
 
-(defun pp/settings-gets-in-dirname (dirname)
+(defun pp/get-settings-in-dirname (dirname)
   "Return the settings from the settings file in the given directory, or nil."
   (let ((dir (expand-file-name dirname project-persist-settings-dir))(settings nil))
     (if (file-directory-p dir)
         (let ((settings-file (expand-file-name pp/settings-file-name dir)))
           (if (file-exists-p settings-file)
-              (let ((settings-string (pp/settings-gets-file-contents settings-file)))
+              (let ((settings-string (pp/get-settings-file-contents settings-file)))
                 (setq settings (pp/read-settings-from-string settings-string))))))
     settings))
 
