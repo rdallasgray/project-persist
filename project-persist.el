@@ -98,10 +98,10 @@
 (defvar project-persist-mode-map
   (let ((map (make-sparse-keymap)))
     (let ((prefix-map (make-sparse-keymap)))
-      (define-key map (kbd "f") 'project-persist-find)
-      (define-key map (kbd "s") 'project-persist-save)
-      (define-key map (kbd "k") 'project-persist-close)
-      (define-key map (kbd "d") 'project-persist-delete)
+      (define-key prefix-map (kbd "f") 'project-persist-find)
+      (define-key prefix-map (kbd "s") 'project-persist-save)
+      (define-key prefix-map (kbd "k") 'project-persist-close)
+      (define-key prefix-map (kbd "d") 'project-persist-delete)
       (define-key map project-persist-keymap-prefix prefix-map))
     map)
   "Keymap for project-persist-mode.")
@@ -134,20 +134,19 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
 
 
 ;; Interactive functions
-(defun project-persist-create (root-dir name)
+(defun project-persist-create ()
   "Create a new project-persist project, giving a project name and root directory."
   (interactive
-   (let ((i-root-dir (read-directory-name "Project root directory: ")))
-     (let ((i-name
+   (let ((root-dir (read-directory-name "Project root directory: ")))
+     (let ((name
             (read-from-minibuffer
              "Project name: "
-             (file-name-nondirectory (directory-file-name i-root-dir)))))
-       (list i-root-dir i-name))))
-    (condition-case err
-        (progn
-          (pp/project-setup root-dir name)
-          (pp/project-open name))
-      (error (pp/signal-error err))))
+             (file-name-nondirectory (directory-file-name root-dir)))))
+       (condition-case err
+           (progn
+             (pp/project-setup root-dir name)
+             (pp/project-open name))
+         (error (pp/signal-error err)))))))
 
 (defun project-persist-save ()
   "Save the project settings and run relevant hooks."
@@ -156,13 +155,12 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
   (let ((settings-dir (pp/settings-dir-from-name project-persist-current-project-name)))
     (pp/project-write settings-dir)))
 
-(defun project-persist-find (name)
+(defun project-persist-find ()
   "Find and load the given project name."
-  (interactive
-   (when (and (pp/has-open-project) (y-or-n-p (format "Save project %s?" project-persist-current-project-name)))
-     (project-persist-save))
-   `(,(pp/read-project-name)))
-  (pp/project-open name))
+  (interactive)
+  (when (and (pp/has-open-project) (y-or-n-p (format "Save project %s?" project-persist-current-project-name)))
+    (project-persist-save))
+  (pp/project-open `(,(pp/read-project-name))))
 
 (defun project-persist-close ()
   "Close the currently open project."
@@ -172,16 +170,15 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
     (project-persist-save))
   (pp/close-current-project))
 
-(defun project-persist-delete (name confirm)
+(defun project-persist-delete ()
   "Delete the given project name."
-  (interactive
-   (let ((i-name (pp/read-project-name)))
-     (when (equalp (i-name project-persist-current-project-name))
-       (error "Can't delete the currently open project. Please close the project first."))
-     (let ((i-confirm (yes-or-no-p (format "Are you sure you want to delete project %s?" i-name))))
-       `(,i-name ,i-confirm))))
-  (when confirm
-    (pp/project-destroy name)))
+  (interactive)
+  (let ((name (pp/read-project-name)))
+    (when (equalp (name project-persist-current-project-name))
+      (error "Can't delete the currently open project. Please close the project first."))
+    (let ((confirm (yes-or-no-p (format "Are you sure you want to delete project %s?" name))))
+      (when confirm
+        (pp/project-destroy name)))))
 
 
 ;; Internal functions
@@ -348,6 +345,7 @@ exists in the project settings directory, and a valid settings file exists withi
 ;;;###autoload
 (define-minor-mode project-persist-mode
   "A minor mode to allow loading and saving of project settings."
+  :global t
   :lighter (format " pp:%s" project-persist-current-project-name)
   :keymap project-persist-mode-map
   :group 'project-persist)
