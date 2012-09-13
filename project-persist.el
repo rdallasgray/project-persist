@@ -120,6 +120,9 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
 
 
 ;; Internal variables
+(defvar pp/lighter nil
+  "Modeline lighter for minor mode.")
+
 (defvar pp/project-list-cache '()
   "Cached list of projects.")
 
@@ -224,7 +227,8 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
   (pp/reset-hashtable)
   (let ((vars '(project-persist-current-project-name
                 project-persist-current-project-root-dir)))
-    (mapc (lambda (var) (set var nil)) vars)))
+    (mapc (lambda (var) (set var nil)) vars))
+  (setq pp/lighter nil))
 
 (defun pp/project-list ()
   "Get a list of names of existing projects."
@@ -313,6 +317,7 @@ exists in the project settings directory, and a valid settings file exists withi
   (setq pp/settings-hash settings)
   (setq project-persist-current-project-name (gethash 'name settings))
   (setq project-persist-current-project-root-dir (gethash 'root-dir settings))
+  (setq pp/lighter (format " pp:%s" project-persist-current-project-name))
   (run-hooks 'project-persist-after-load-hook))
 
 (defun pp/get-settings-file-contents (settings-file)
@@ -354,7 +359,7 @@ exists in the project settings directory, and a valid settings file exists withi
 (define-minor-mode project-persist-mode
   "A minor mode to allow loading and saving of project settings."
   :global t
-  :lighter (format " pp:%s" project-persist-current-project-name)
+  :lighter pp/lighter
   :keymap project-persist-mode-map
   :group 'project-persist
   (unless project-persist-mode
