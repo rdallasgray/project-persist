@@ -50,7 +50,7 @@
 ;; Each member of the list should be a cons cell with car the name of the setting
 ;; (as a symbol) and cdr a function to obtain the value of the setting.
 ;; The function will be called when a project is created and the value set and saved accordingly,
-;; and can be retrieved when a project is loaded using (pp/get-setting KEY).
+;; and can be retrieved when a project is loaded using (pp/settings-get KEY).
 ;;
 ;; See the README for more details.
 ;;  
@@ -160,7 +160,7 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
   (interactive)
   (when (and (pp/has-open-project) (y-or-n-p (format "Save project %s?" project-persist-current-project-name)))
     (project-persist-save))
-  (pp/project-open `(,(pp/read-project-name))))
+  (pp/project-open (pp/read-project-name)))
 
 (defun project-persist-close ()
   "Close the currently open project."
@@ -182,11 +182,21 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
 
 
 ;; Internal functions
+(defun pp/disable-hooks ()
+  "Disable all project-persist hooks (normally on disabling the minor mode)."
+  (let ((hooks '(project-persist-before-create-hook
+                 project-persist-after-create-hook
+                 project-persist-before-load-hook
+                 project-persist-after-load-hook
+                 project-persist-before-save-hook
+                 project-persist-after-save-hook)))
+    (mapc (lambda (hook) (set hook nil)) hooks)))
+
 (defun pp/reset-hashtable ()
   "Empty the hashtable containing project settings."
   (clrhash pp/settings-hash))
 
-(defun pp/get-setting (key)
+(defun pp/settings-get (key)
   "Get the value of setting key."
   (gethash 'key pp/settings-hash))
 
@@ -212,8 +222,9 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
 (defun pp/close-current-project ()
   "Close the current project, setting relevant vars to nil."
   (pp/reset-hashtable)
-  (setq project-persist-current-project-name nil)
-  (setq project-persist-current-project-root-dir nil))
+  (let ((vars '(project-persist-current-project-name
+                project-persist-current-project-root-dir)))
+    (mapc (lambda (var) (set var nil)) vars)))
 
 (defun pp/project-list ()
   "Get a list of names of existing projects."
@@ -223,7 +234,7 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
           (while dirs
             (let ((dir (car dirs)))
               (when (not (or (equalp dir ".") (equalp dir "..")))
-                (let ((settings (pp/get-settings-in-dirname dir)))
+                (let ((settings (pp/settings-gets-in-dirname dir)))
                   (when settings
                     (add-to-list 'project-list (gethash 'name settings)))))
               (setq dirs (cdr dirs)))))
@@ -250,13 +261,13 @@ exists in the project settings directory, and a valid settings file exists withi
     (let ((settings-file (expand-file-name pp/settings-file-name settings-dir)))
       (file-exists-p settings-file))))
 
-(defun pp/get-settings-in-dirname (dirname)
+(defun pp/settings-gets-in-dirname (dirname)
   "Return the settings from the settings file in the given directory, or nil."
   (let ((dir (expand-file-name dirname project-persist-settings-dir))(settings nil))
     (if (file-directory-p dir)
         (let ((settings-file (expand-file-name pp/settings-file-name dir)))
           (if (file-exists-p settings-file)
-              (let ((settings-string (pp/get-settings-file-contents settings-file)))
+              (let ((settings-string (pp/settings-gets-file-contents settings-file)))
                 (setq settings (pp/read-settings-from-string settings-string))))))
     settings))
 
@@ -303,8 +314,8 @@ exists in the project settings directory, and a valid settings file exists withi
   "Make the settings read from the project settings file current."
   (run-hooks 'project-persist-before-load-hook)
   (setq pp/settings-hash settings)
-  (setq project-persist-current-project-name (pp/get-setting 'name))
-  (setq project-persist-current-project-root-dir (pp/get-setting 'root-dir))
+  (setq project-persist-current-project-name (gethash 'name settings))
+  (setq project-persist-current-project-root-dir (gethash 'root-dir settings))
   (run-hooks 'project-persist-after-load-hook))
 
 (defun pp/get-settings-file-contents (settings-file)
@@ -348,7 +359,10 @@ exists in the project settings directory, and a valid settings file exists withi
   :global t
   :lighter (format " pp:%s" project-persist-current-project-name)
   :keymap project-persist-mode-map
-  :group 'project-persist)
+  :group 'project-persist
+  (unless project-persist-mode
+    (pp/disable-hooks)
+    (pp/close-current-project)))
 
 (provide 'project-persist)
 ;;; project-persist.el ends here
