@@ -174,7 +174,7 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
   "Delete the given project name."
   (interactive)
   (let ((name (pp/read-project-name)))
-    (when (equalp (name project-persist-current-project-name))
+    (when (equalp name project-persist-current-project-name)
       (error "Can't delete the currently open project. Please close the project first."))
     (let ((confirm (yes-or-no-p (format "Are you sure you want to delete project %s?" name))))
       (when confirm
@@ -288,12 +288,9 @@ exists in the project settings directory, and a valid settings file exists withi
 
 (defun pp/set-additional-settings ()
   (let ((settings-keys project-persist-additional-settings))
-    (message "setting additional settings: %S" settings-keys)
     (while settings-keys
       (let ((setting (car settings-keys)))
-        (message "setting: %S" setting)
         (let ((setting-key (car setting))(setting-value (funcall (cdr setting))))
-          (message "key: %S value: %S" setting-key setting-value)
           (pp/settings-set setting-key setting-value)
           (setq settings-keys (cdr settings-keys)))))))
 
