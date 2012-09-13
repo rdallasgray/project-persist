@@ -18,7 +18,7 @@ Each element of the list is a cons cell with car a symbol naming the new setting
 The setting can be retrieved once a project is loaded by invoking:
 
 ```lisp
-(pp/get-setting 'my-setting)
+(pp/settings-get 'my-setting)
 ```
 
 Project-persist is intentionally lightweight, in the spirit of Emacs, so that it can be used to build a more complex project-management infrastructure tailored to your needs. Other packages, like the aforementioned Projectile, handle things like searching within a project, so there's no need to duplicate such functionality.

@@ -8,21 +8,25 @@
 
 (ert-deftest pp-test/empty-project-name-signals-error ()
   "Test that attempting to create a project with an empty name signals an error."
+  (project-persist-mode 1)
   (flet ((pp/make-settings-dir (sd) t)(pp/project-write (n rd sd) t))
     (should-error (pp/project-setup "/test" ""))))
 
 (ert-deftest pp-test/existing-project-name-signals-error ()
   "Test that attempting to create a project with an existing name signals an error."
+  (project-persist-mode 1)
   (flet ((pp/project-exists (name) t)(pp/make-settings-dir (sd) t)(pp/project-write (n rd sd) t))
     (should-error (pp/project-setup "/test" "test"))))
 
 (ert-deftest pp-test/correct-settings-dir-from-name ()
   "Test that the correct directory name for the settings file is returned."
+  (project-persist-mode 1)
   (setq project-persist-settings-dir "/test/settings-dir")
   (should (equal (pp/settings-dir-from-name "name") "/test/settings-dir/name")))
 
 (ert-deftest pp-test/settings-written-to-correct-file ()
   "Test that pp/project-write writes to the correct file and directory."
+  (project-persist-mode 1)
   (let
       ((settings-dir "/test/settings-dir")
        (project-name "test-project-name")
@@ -33,6 +37,7 @@
 
 (ert-deftest pp-test/settings-written-correctly ()
   "Test that project settings are stored correctly."
+  (project-persist-mode 1)
   (setq project-persist-additional-settings nil)
   (pp/reset-hashtable)
   (let
@@ -49,6 +54,7 @@
 
 (ert-deftest pp-test/additional-settings-written-correctly ()
   "Test that additional project settings are stored correctly."
+  (project-persist-mode 1)
   (setq project-persist-additional-settings nil)
   (pp/reset-hashtable)
   (let
@@ -67,6 +73,7 @@
 
 (ert-deftest pp-test/settings-read-correctly ()
   "Test that project settings are read back in correctly."
+  (project-persist-mode 1)
   (let ((settings-string "\n#s(hash-table size 65 test equal rehash-size 1.5 rehash-threshold 0.8 data (root-dir \"/test/project-root-dir\" name \"test-project-name\" test \"test setting\"))\n"))
     (let ((settings (pp/read-settings-from-string settings-string)))
       (should (equal (gethash 'name settings) "test-project-name"))
@@ -75,6 +82,7 @@
 
 (ert-deftest pp-test/settings-applied-correctly ()
   "Test that project settings are applied correctly."
+  (project-persist-mode 1)
   (let ((settings-string "\n#s(hash-table size 65 test equal rehash-size 1.5 rehash-threshold 0.8 data (root-dir \"/test/project-root-dir\" name \"test-project-name\" test \"test setting\"))\n"))
     (let ((settings (pp/read-settings-from-string settings-string)))
       (pp/apply-project-settings settings)
@@ -83,9 +91,17 @@
 
 (ert-deftest pp-test/project-closed-correctly ()
   "Test that variables are set to nil when a project is closed."
+  (project-persist-mode 1)
   (let ((settings-string "\n#s(hash-table size 65 test equal rehash-size 1.5 rehash-threshold 0.8 data (root-dir \"/test/project-root-dir\" name \"test-project-name\" test \"test setting\"))\n"))
     (let ((settings (pp/read-settings-from-string settings-string)))
       (pp/apply-project-settings settings)
       (pp/close-current-project)
       (should (equal nil project-persist-current-project-name))
       (should (equal nil project-persist-current-project-root-dir)))))
+
+(ert-deftest pp-test/project-mode-off-removes-hooks ()
+  "Test that hooks are set to nil when a project is closed."
+  (project-persist-mode 1)
+  (add-hook 'project-persist-before-load-hook (lambda () (concat "test")))
+  (project-persist-mode -1)
+  (should (equal nil project-persist-before-load-hook)))
