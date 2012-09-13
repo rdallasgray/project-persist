@@ -22,3 +22,10 @@ The setting can be retrieved once a project is loaded by invoking:
 ```
 
 Project-persist is intentionally lightweight, in the spirit of Emacs, so that it can be used to build a more complex project-management infrastructure tailored to your needs. Other packages, like the aforementioned Projectile, handle things like searching within a project, so there's no need to duplicate such functionality.
+
+It can be required and enabled as follows:
+
+```lisp
+(require 'project-persist)
+(project-persist-mode t)
+```
