@@ -46,10 +46,16 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
 
 
 ;; Internal variables
+(defvar pp/project-list-cache '()
+  "Cached list of projects.")
+
+(defvar pp/project-list-cache-valid nil
+  "Whether the cached project list is currently valid.")
+
 (defvar pp/settings-file-name "pp-settings.txt"
   "Name of the default settings file to write in each project's settings directory.")
 
-(defvar pp/settings-hash (pp/reset-hashtable)
+(defvar pp/settings-hash (make-hash-table :test 'equal)
   "Settings hashtable to be written to the project settings file.")
 
 ;; Interactive functions
@@ -68,16 +74,26 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
           (pp/project-open name))
       (error (pp/signal-error err))))
 
-(defun project-persist-save ())
+(defun project-persist-save ()
+  "Save the project settings and run relevant hooks."
+  )
 
-(defun project-persist-load (name))
-
-(defun project-persist-list ())
+(defun project-persist-load (name)
+  "Load the given project name."
+  (interactive
+   `(,(pp/read-project-name)))
+  (pp/project-open name))
 
 ;; Internal functions
 (defun pp/reset-hashtable ()
   "Empty the hashtable containing project settings."
-  (setq pp/settings-hash (make-hash-table :test 'equal)))
+  (clrhash pp/settings-hash))
+
+(defun pp/read-project-name ()
+  "Read the project name from user input using a choice of completing-read or ido-completing-read."
+   (let ((func 'completing-read))
+     (when (featurep 'ido) (setq func 'ido-completing-read))
+     (funcall func "Project name: " (pp/project-list) nil t)))
 
 (defun pp/signal-error (err &optional func)
   "Ding and message the error string, optionally continuing with a given function."
@@ -86,7 +102,46 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
   (sit-for 1)
   (when func (funcall func)))
 
-(defun pp/project-exists (name) nil)
+(defun pp/project-list ()
+  "Get a list of names of existing projects."
+  (when (not pp/project-list-cache-valid)
+      (let ((settings-dir project-persist-settings-dir)(project-list '()))
+        (let ((dirs (directory-files settings-dir)))
+          (while dirs
+            (let ((dir (car dirs)))
+              (when (not (or (equalp dir ".") (equalp dir "..")))
+                (let ((settings (pp/get-settings-in-dirname dir)))
+                  (when settings
+                    (add-to-list 'project-list (gethash 'name settings)))))
+              (setq dirs (cdr dirs)))))
+        (pp/set-project-list-cache project-list)))
+  pp/project-list-cache)
+
+(defun pp/set-project-list-cache (project-list)
+  "Set the cached project list to project-list and make it valid."
+  (setq pp/project-list-cache project-list)
+  (setq pp/project-list-cache-valid t))
+
+(defun pp/invalidate-project-list-cache ()
+  "Make the cached project list invalid."
+  (setq pp/project-list-cache-valid nil))
+
+(defun pp/project-exists (name)
+  "Whether a project with the given name already exists (i.e., an appropriately-named directory
+exists in the project settings directory, and a valid settings file exists within that directory)."
+  (let ((settings-dir (pp/settings-dir-from-name name)))
+    (let ((settings-file (expand-file-name pp/settings-file-name settings-dir)))
+      (file-exists-p settings-file))))
+
+(defun pp/get-settings-in-dirname (dirname)
+  "Return the settings from the settings file in the given directory, or nil."
+  (let ((dir (expand-file-name dirname project-persist-settings-dir))(settings nil))
+    (if (file-directory-p dir)
+        (let ((settings-file (expand-file-name pp/settings-file-name dir)))
+          (if (file-exists-p settings-file)
+              (let ((settings-string (pp/get-settings-file-contents settings-file)))
+                (setq settings (pp/read-settings-from-string settings-string))))))
+    settings))
 
 (defun pp/project-setup (root-dir name)
   "Set up a project with name name and root directory root-dir."
@@ -100,6 +155,7 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
     (pp/settings-set 'name name)
     (pp/set-additional-settings)
     (pp/project-write settings-dir)
+    (pp/invalidate-project-list-cache)
     (run-hooks 'project-persist-after-create-hook)))
 
 (defun pp/set-additional-settings ()
@@ -122,14 +178,17 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
   (let ((settings-file
          (expand-file-name
           pp/settings-file-name (pp/settings-dir-from-name name))))
-    (let ((settings (pp/project-read-settings-from-string
+    (let ((settings (pp/read-settings-from-string
                      (pp/get-settings-file-contents settings-file))))
       (pp/apply-project-settings settings))))
 
 (defun pp/apply-project-settings (settings)
   "Make the settings read from the project settings file current."
-  ;; set hashtable then set global vars
-  )
+  (run-hooks 'project-persist-before-load-hook)
+  (setq pp/settings-hash settings)
+  (setq project-persist-current-project-name (gethash 'name pp/settings-hash))
+  (setq project-persist-current-project-root-dir (gethash 'root-dir pp/settings-hash))
+  (run-hooks 'project-persist-after-load-hook))
 
 (defun pp/get-settings-file-contents (settings-file)
   "Read and return contents of settings-file"
@@ -137,9 +196,9 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
     (insert-file-contents settings-file)
     (buffer-string)))
 
-(defun pp/project-read-settings-from-string (settings-string)
+(defun pp/read-settings-from-string (settings-string)
   "Read and return the project settings hash from the given file."
-  (read-from-string settings-string))
+  (read settings-string))
 
 (defun pp/project-write (settings-dir)
   "Write project settings to the given settings directory."
