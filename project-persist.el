@@ -2,11 +2,6 @@
 (defgroup project-persist nil
   "Settings related to project-persist, a package to enable simple persistence of project settings.")
 
-(defcustom project-persist-desktop t
-  "Whether project-persist should load and save the desktop along with the project."
-  :type 'boolean
-  :group 'project-persist)
-
 (defcustom project-persist-settings-dir (concat user-emacs-directory "project-persist")
   "The directory in which project-persist will save project settings files."
   :type 'directory
@@ -76,13 +71,32 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
 
 (defun project-persist-save ()
   "Save the project settings and run relevant hooks."
-  )
+  (interactive)
+  (when (not (pp/has-open-project)) (error "No project is currently open."))
+  (let ((settings-dir (pp/settings-dir-from-name project-persist-current-project-name)))
+    (pp/project-write settings-dir)))
 
 (defun project-persist-load (name)
   "Load the given project name."
   (interactive
    `(,(pp/read-project-name)))
   (pp/project-open name))
+
+(defun project-persist-close()
+  "Close the currently open project."
+  (interactive)
+  (when (not (pp/has-open-project)) (error "No project is currently open."))
+  (pp/close-current-project))
+
+(defun project-persist-delete (name confirm)
+  "Delete the given project name."
+  (interactive
+   (let ((i-name (pp/read-project-name)))
+     (let ((i-confirm (yes-or-no-p (format "Are you sure you want to delete project %s?" i-name))))
+       `(,i-name ,i-confirm))))
+  (when confirm
+    (pp/project-destroy name)))
+
 
 ;; Internal functions
 (defun pp/reset-hashtable ()
@@ -101,6 +115,18 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
   (message "%s" (error-message-string err))
   (sit-for 1)
   (when func (funcall func)))
+
+(defun pp/project-destroy (name)
+  "Delete the settings directory for the given project name."
+  (let ((settings-dir (pp/settings-dir-from-name name)))
+    (delete-directory settings-dir t t)
+    (pp/invalidate-project-list-cache)))
+
+(defun pp/close-current-project ()
+  "Close the current project, setting relevant vars to nil."
+  (pp/reset-hashtable)
+  (setq project-persist-current-project-name nil)
+  (setq project-persist-current-project-root-dir nil))
 
 (defun pp/project-list ()
   "Get a list of names of existing projects."
@@ -125,6 +151,10 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
 (defun pp/invalidate-project-list-cache ()
   "Make the cached project list invalid."
   (setq pp/project-list-cache-valid nil))
+
+(defun pp/has-open-project ()
+  "Whether a project is currently open."
+  (not (equalp nil project-persist-current-project-name)))
 
 (defun pp/project-exists (name)
   "Whether a project with the given name already exists (i.e., an appropriately-named directory
@@ -209,7 +239,10 @@ exists in the project settings directory, and a valid settings file exists withi
 
 (defun pp/write-to-settings (settings-file settings-string)
   "Write the given string representing project settings to the given file."
-  (with-temp-file settings-file (insert settings-string)))
+  (run-hooks 'project-persist-before-save-hook)
+  (with-temp-file settings-file
+    (insert settings-string))
+  (run-hooks 'project-persist-after-save-hook))
 
 (defun pp/settings-dir-from-name (name)
   "Return the settings directory for the project based on its name."
