@@ -1,3 +1,61 @@
+;;; project-persist.el --- A minor mode to allow loading and saving of project settings.
+
+;; Copyright (C) 2012 Robert Dallas Gray
+
+;; Author: Robert Dallas Gray
+;; URL: https://github.com/rdallasgray/project-persist
+;; Version: 0.1
+;; Created: 2012-09-13
+;; Keywords: project, persistence
+
+;; This file is NOT part of GNU Emacs.
+
+;;; License:
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 3, or (at your option)
+;; any later version.
+;;
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+;;
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+;; Boston, MA 02110-1301, USA.
+
+;;; Commentary:
+;;
+;; Project-persist is a simple and extensible package to allow persistence of project settings.
+;; It is intended as the foundation for a more capable infrastructure of project management.
+;; In the spirit of Emacs, it provides a lightweight way to do one thing: persist a list of
+;; projects across sessions.
+;;
+;; Interactive functions are provided to create, open, save, close and delete simple
+;; projects based on single root directories, using completion (with ido where available).
+;; Around each of these functions, hooks are provided so that other project management
+;; activities can take place. You may, for example, want to load or save your Emacs
+;; desktop along with the project's other settings, create a tags file, or enable another
+;; project-management solution such as projectile (https://github.com/bbatsov/projectile).
+;;
+;; Settings saved by default are a project name and root directory. It is simple to add
+;; other settings, by adding to the list project-persist-additional-settings:
+;;
+;; (add-to-list 'project-persist-additional-settings
+;;    '(my-setting . (lambda () (read-from-minibuffer "My setting: ")))
+;;
+;; Each member of the list should be a cons cell with car the name of the setting
+;; (as a symbol) and cdr a function to obtain the value of the setting.
+;; The function will be called when a project is created and the value set and saved accordingly,
+;; and can be retrieved when a project is loaded using (pp/get-setting KEY).
+;;
+;; See the README for more details.
+;;  
+;;; Code:
+
 ;; Customize options
 (defgroup project-persist nil
   "Settings related to project-persist, a package to enable simple persistence of project settings.")
@@ -7,8 +65,16 @@
   :type 'directory
   :group 'project-persist)
 
+(defcustom project-persist-keymap-prefix (kbd "C-c P")
+  "Project-persist keymap prefix."
+  :type 'sexp
+  :group 'project-persist)
+
 
 ;; Hooks
+(defvar project-persist-mode-hook nil
+  "Run when entering project-persist-mode.")
+
 (defvar project-persist-before-create-hook nil
   "A hook to be run before project-persist creates a project.")
 
@@ -26,6 +92,19 @@
 
 (defvar project-persist-after-load-hook nil
   "A hook to be run after project-persist loads a project.")
+
+
+;; Keymap
+(defvar project-persist-mode-map
+  (let ((map (make-sparse-keymap)))
+    (let ((prefix-map (make-sparse-keymap)))
+      (define-key map (kbd "f") 'project-persist-find)
+      (define-key map (kbd "s") 'project-persist-save)
+      (define-key map (kbd "k") 'project-persist-close)
+      (define-key map (kbd "d") 'project-persist-delete)
+      (define-key map project-persist-keymap-prefix prefix-map))
+    map)
+  "Keymap for project-persist-mode.")
 
 
 ;; Global variables
@@ -53,6 +132,7 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
 (defvar pp/settings-hash (make-hash-table :test 'equal)
   "Settings hashtable to be written to the project settings file.")
 
+
 ;; Interactive functions
 (defun project-persist-create (root-dir name)
   "Create a new project-persist project, giving a project name and root directory."
@@ -76,22 +156,28 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
   (let ((settings-dir (pp/settings-dir-from-name project-persist-current-project-name)))
     (pp/project-write settings-dir)))
 
-(defun project-persist-load (name)
-  "Load the given project name."
+(defun project-persist-find (name)
+  "Find and load the given project name."
   (interactive
+   (when (and (pp/has-open-project) (y-or-n-p (format "Save project %s?" project-persist-current-project-name)))
+     (project-persist-save))
    `(,(pp/read-project-name)))
   (pp/project-open name))
 
-(defun project-persist-close()
+(defun project-persist-close ()
   "Close the currently open project."
   (interactive)
   (when (not (pp/has-open-project)) (error "No project is currently open."))
+  (when (y-or-n-p (format "Save project %s?" project-persist-current-project-name))
+    (project-persist-save))
   (pp/close-current-project))
 
 (defun project-persist-delete (name confirm)
   "Delete the given project name."
   (interactive
    (let ((i-name (pp/read-project-name)))
+     (when (equalp (i-name project-persist-current-project-name))
+       (error "Can't delete the currently open project. Please close the project first."))
      (let ((i-confirm (yes-or-no-p (format "Are you sure you want to delete project %s?" i-name))))
        `(,i-name ,i-confirm))))
   (when confirm
@@ -102,6 +188,10 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
 (defun pp/reset-hashtable ()
   "Empty the hashtable containing project settings."
   (clrhash pp/settings-hash))
+
+(defun pp/get-setting (key)
+  "Get the value of setting key."
+  (gethash 'key pp/settings-hash))
 
 (defun pp/read-project-name ()
   "Read the project name from user input using a choice of completing-read or ido-completing-read."
@@ -216,8 +306,8 @@ exists in the project settings directory, and a valid settings file exists withi
   "Make the settings read from the project settings file current."
   (run-hooks 'project-persist-before-load-hook)
   (setq pp/settings-hash settings)
-  (setq project-persist-current-project-name (gethash 'name pp/settings-hash))
-  (setq project-persist-current-project-root-dir (gethash 'root-dir pp/settings-hash))
+  (setq project-persist-current-project-name (pp/get-setting 'name))
+  (setq project-persist-current-project-root-dir (pp/get-setting 'root-dir))
   (run-hooks 'project-persist-after-load-hook))
 
 (defun pp/get-settings-file-contents (settings-file)
@@ -255,4 +345,12 @@ exists in the project settings directory, and a valid settings file exists withi
   (unless (file-exists-p settings-dir)
     (make-directory settings-dir)))
 
+;;;###autoload
+(define-minor-mode project-persist-mode
+  "A minor mode to allow loading and saving of project settings."
+  :lighter (format " pp:%s" project-persist-current-project-name)
+  :keymap project-persist-mode-map
+  :group 'project-persist)
+
 (provide 'project-persist)
+;;; project-persist.el ends here
