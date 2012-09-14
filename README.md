@@ -29,3 +29,5 @@ It can be required and enabled as follows:
 (require 'project-persist)
 (project-persist-mode t)
 ```
+
+Project-persist is available on [Melpa](https://github.com/milkypostman/melpa) and can be installed using Emacs' package system. 
