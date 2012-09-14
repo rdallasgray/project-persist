@@ -334,7 +334,7 @@ exists in the project settings directory, and a valid settings file exists withi
   (setq project-persist-current-project-name (gethash 'name settings))
   (setq project-persist-current-project-root-dir (gethash 'root-dir settings))
   (setq pp/lighter (format " pp:%s" project-persist-current-project-name))
-  (setq project-persist-current-project-settings-dir (settings-dir-from-name project-persist-current-project-name))
+  (setq project-persist-current-project-settings-dir (pp/settings-dir-from-name project-persist-current-project-name))
   (add-hook 'kill-emacs-hook 'pp/offer-save-if-open-project)
   (run-hooks 'project-persist-after-load-hook))
 
