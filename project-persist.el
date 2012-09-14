@@ -93,6 +93,12 @@
 (defvar project-persist-after-load-hook nil
   "A hook to be run after project-persist loads a project.")
 
+(defvar project-persist-before-close-hook nil
+  "A hook to be run before project-persist closes a project.")
+
+(defvar project-persist-after-close-hook nil
+  "A hook to be run after project-persist closes a project.")
+
 
 ;; Keymap
 (defvar project-persist-mode-map
@@ -113,6 +119,9 @@
 
 (defvar project-persist-current-project-root-dir nil
   "The root directory of the project currently loaded by project-persist.")
+
+(defvar project-persist-current-project-settings-dir nil
+  "The directory in which settings for the current project are stored.")
 
 (defvar project-persist-additional-settings '()
   "A list of additional keys to store in the project settings file (the defaults are 'name and 'root-dir).
@@ -229,11 +238,13 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
 
 (defun pp/close-current-project ()
   "Close the current project, setting relevant vars to nil."
+  (run-hooks 'project-persist-before-close-hook)
   (pp/reset-hashtable)
   (let ((vars '(project-persist-current-project-name
                 project-persist-current-project-root-dir)))
     (mapc (lambda (var) (set var nil)) vars))
-  (setq pp/lighter nil))
+  (setq pp/lighter nil)
+    (run-hooks 'project-persist-after-close-hook))
 
 (defun pp/project-list ()
   "Get a list of names of existing projects."
