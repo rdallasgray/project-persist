@@ -139,17 +139,18 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
 ;; Interactive functions
 (defun project-persist-create ()
   "Create a new project-persist project, giving a project name and root directory."
-  (interactive
-   (let ((root-dir (read-directory-name "Project root directory: ")))
-     (let ((name
-            (read-from-minibuffer
-             "Project name: "
-             (file-name-nondirectory (directory-file-name root-dir)))))
-       (condition-case err
-           (progn
-             (pp/project-setup root-dir name)
-             (pp/project-open name))
-         (error (pp/signal-error err)))))))
+  (interactive)
+  (pp/offer-save-if-open-project)
+  (let ((root-dir (read-directory-name "Project root directory: ")))
+    (let ((name
+           (read-from-minibuffer
+            "Project name: "
+            (file-name-nondirectory (directory-file-name root-dir)))))
+      (condition-case err
+          (progn
+            (pp/project-setup root-dir name)
+            (pp/project-open name))
+        (error (pp/signal-error err))))))
 
 (defun project-persist-save ()
   "Save the project settings and run relevant hooks."
@@ -161,16 +162,14 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
 (defun project-persist-find ()
   "Find and load the given project name."
   (interactive)
-  (when (and (pp/has-open-project) (y-or-n-p (format "Save project %s?" project-persist-current-project-name)))
-    (project-persist-save))
+  (pp/offer-save-if-open-project)
   (pp/project-open (pp/read-project-name)))
 
 (defun project-persist-close ()
   "Close the currently open project."
   (interactive)
   (when (not (pp/has-open-project)) (error "No project is currently open."))
-  (when (y-or-n-p (format "Save project %s?" project-persist-current-project-name))
-    (project-persist-save))
+  (pp/offer-save-if-open-project)
   (pp/close-current-project))
 
 (defun project-persist-delete ()
@@ -185,6 +184,11 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
 
 
 ;; Internal functions
+(defun pp/offer-save-if-open-project ()
+  "Offer to save the open project."
+  (when (and (pp/has-open-project) (y-or-n-p (format "Save project %s?" project-persist-current-project-name)))
+    (project-persist-save)))
+
 (defun pp/disable-hooks ()
   "Disable all project-persist hooks (normally on disabling the minor mode)."
   (let ((hooks '(project-persist-before-create-hook
@@ -193,7 +197,8 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
                  project-persist-after-load-hook
                  project-persist-before-save-hook
                  project-persist-after-save-hook)))
-    (mapc (lambda (hook) (set hook nil)) hooks)))
+    (mapc (lambda (hook) (set hook nil)) hooks))
+  (remove-hook 'kill-emacs-hook 'pp/offer-save-if-open-project))
 
 (defun pp/reset-hashtable ()
   "Empty the hashtable containing project settings."
@@ -318,6 +323,7 @@ exists in the project settings directory, and a valid settings file exists withi
   (setq project-persist-current-project-name (gethash 'name settings))
   (setq project-persist-current-project-root-dir (gethash 'root-dir settings))
   (setq pp/lighter (format " pp:%s" project-persist-current-project-name))
+  (add-hook 'kill-emacs-hook 'pp/offer-save-if-open-project)
   (run-hooks 'project-persist-after-load-hook))
 
 (defun pp/get-settings-file-contents (settings-file)
