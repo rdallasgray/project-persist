@@ -53,7 +53,7 @@
 ;; and can be retrieved when a project is loaded using (pp/settings-get KEY).
 ;;
 ;; See the README for more details.
-;;  
+;;
 ;;; Code:
 
 ;; Customize options
@@ -215,7 +215,7 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
 
 (defun pp/settings-get (key)
   "Get the value of setting key."
-  (gethash 'key pp/settings-hash))
+  (gethash key pp/settings-hash))
 
 (defun pp/read-project-name ()
   "Read the project name from user input using a choice of completing-read or ido-completing-read."
