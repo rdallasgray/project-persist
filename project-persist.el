@@ -217,6 +217,10 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
   "Get the value of setting key."
   (gethash key pp/settings-hash))
 
+(defun pp/settings-set (key value)
+  "Set project setting key to value."
+  (puthash key value pp/settings-hash))
+
 (defun pp/read-project-name ()
   "Read the project name from user input using a choice of completing-read or ido-completing-read."
    (let ((func 'completing-read))
@@ -313,10 +317,6 @@ exists in the project settings directory, and a valid settings file exists withi
         (let ((setting-key (car setting))(setting-value (funcall (cdr setting))))
           (pp/settings-set setting-key setting-value)
           (setq settings-keys (cdr settings-keys)))))))
-
-(defun pp/settings-set (key value)
-  "Set project setting key to value."
-  (puthash key value pp/settings-hash))
 
 (defun pp/project-open (name)
   "Open the project named name."

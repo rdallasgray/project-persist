@@ -89,6 +89,16 @@
       (should (equal project-persist-current-project-name "test-project-name"))
       (should (equal project-persist-current-project-root-dir "/test/project-root-dir")))))
 
+(ert-deftest pp-test/settings-read-from-hash-correctly ()
+  "Test that settings are stored in the hash and read back correctly via the pp/settings-get method."
+  (project-persist-mode 1)
+  (let ((settings-string "\n#s(hash-table size 65 test equal rehash-size 1.5 rehash-threshold 0.8 data (root-dir \"/test/project-root-dir\" name \"test-project-name\" test \"test setting\"))\n"))
+    (let ((settings (pp/read-settings-from-string settings-string)))
+      (pp/apply-project-settings settings)
+      (should (equal (pp/settings-get 'name) "test-project-name"))
+      (should (equal (pp/settings-get 'root-dir) "/test/project-root-dir"))
+      (should (equal (pp/settings-get 'test) "test setting")))))
+
 (ert-deftest pp-test/project-closed-correctly ()
   "Test that variables are set to nil when a project is closed."
   (project-persist-mode 1)
