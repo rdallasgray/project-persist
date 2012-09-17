@@ -244,11 +244,16 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
   "Close the current project, setting relevant vars to nil."
   (run-hooks 'project-persist-before-close-hook)
   (pp/reset-hashtable)
-  (let ((vars '(project-persist-current-project-name
-                project-persist-current-project-root-dir)))
-    (mapc (lambda (var) (set var nil)) vars))
+  (pp/clear-project-vars)
   (setq pp/lighter nil)
-    (run-hooks 'project-persist-after-close-hook))
+  (run-hooks 'project-persist-after-close-hook))
+
+(defun pp/clear-project-vars ()
+  "Clear standard project variables."
+    (let ((vars '(project-persist-current-project-name
+                project-persist-current-project-root-dir
+                project-persist-current-project-settings-dir)))
+    (mapc (lambda (var) (set var nil)) vars)))
 
 (defun pp/project-list ()
   "Get a list of names of existing projects."
