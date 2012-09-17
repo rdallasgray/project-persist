@@ -4,7 +4,7 @@
 
 ;; Author: Robert Dallas Gray
 ;; URL: https://github.com/rdallasgray/project-persist
-;; Version: 0.5
+;; Version: 20120917.1003
 ;; Created: 2012-09-13
 ;; Keywords: project, persistence
 
