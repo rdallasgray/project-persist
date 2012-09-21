@@ -311,6 +311,7 @@ exists in the project settings directory, and a valid settings file exists withi
     (pp/settings-set 'root-dir root-dir)
     (pp/settings-set 'name name)
     (pp/set-additional-settings)
+    (setq project-persist-current-project-settings-dir settings-dir)
     (pp/project-write settings-dir)
     (pp/invalidate-project-list-cache)
     (run-hooks 'project-persist-after-create-hook)))
