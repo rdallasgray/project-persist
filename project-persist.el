@@ -108,6 +108,7 @@
       (define-key prefix-map (kbd "s") 'project-persist-save)
       (define-key prefix-map (kbd "k") 'project-persist-close)
       (define-key prefix-map (kbd "d") 'project-persist-delete)
+      (define-key prefix-map (kbd "n") 'project-persist-create)      
       (define-key map project-persist-keymap-prefix prefix-map))
     map)
   "Keymap for project-persist-mode.")
