@@ -70,6 +70,20 @@
   :type 'sexp
   :group 'project-persist)
 
+(defcustom project-persist-auto-save-global nil
+  "If non-nil, automatically save projects without prompting.
+
+Can be overridden on a project-basis with
+\(pp/settings-set 'auto-save VALUE), where VALUE is t or 'prompt
+
+If the project setting `auto-save' is `t' or if the value of
+variable `project-persist-auto-save-global' is non-nil, save the
+project without prompting
+
+If the project setting `auto-save' is 'prompt, always prompt before saving"
+  :type 'boolean
+  :group 'project-persist)
+
 
 ;; Hooks
 (defvar project-persist-mode-hook nil
@@ -195,9 +209,19 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
 
 ;; Internal functions
 (defun pp/offer-save-if-open-project ()
-  "Offer to save the open project."
-  (when (and (pp/has-open-project) (y-or-n-p (format "Save project %s?" project-persist-current-project-name)))
-    (project-persist-save)))
+  "Offer to save the open project.
+
+Depending on the value of the variable
+`project-persist-auto-save-global' (which see) and the project
+setting `auto-save', save the project without asking"
+  (when (pp/has-open-project)
+    (let ((project-persist-auto-save-local (pp/settings-get 'auto-save)))
+      (if (or (if (symbolp project-persist-auto-save-local)
+                  (not (equal project-persist-auto-save-local 'prompt))
+                (or project-persist-auto-save-local
+                    project-persist-auto-save-global))
+              (y-or-n-p (format "Save project %s?" project-persist-current-project-name)))
+          (project-persist-save)))))
 
 (defun pp/disable-hooks ()
   "Disable all project-persist hooks (normally on disabling the minor mode)."
