@@ -209,19 +209,20 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
 
 ;; Internal functions
 (defun pp/offer-save-if-open-project ()
-  "Offer to save the open project.
-
-Depending on the value of the variable
-`project-persist-auto-save-global' (which see) and the project
-setting `auto-save', save the project without asking"
+  "Offer to save the open project. Depending on the value of the variable
+`project-persist-auto-save-global' (which see) and the project setting 
+`auto-save', save the project without asking"
   (when (pp/has-open-project)
-    (let ((project-persist-auto-save-local (pp/settings-get 'auto-save)))
-      (if (or (if (symbolp project-persist-auto-save-local)
-                  (not (equal project-persist-auto-save-local 'prompt))
-                (or project-persist-auto-save-local
-                    project-persist-auto-save-global))
-              (y-or-n-p (format "Save project %s?" project-persist-current-project-name)))
-          (project-persist-save)))))
+    (let ((auto-save (pp/auto-save-value)))
+      (when (or auto-save (y-or-n-p (format "Save project %s?" project-persist-current-project-name)))
+	(project-persist-save)))))
+
+(defun pp/auto-save-value ()
+  "Get the auto-save setting; if set locally, use that, otherwise use the global setting."
+  (let ((local-setting (pp/settings-get 'auto-save)))
+    (if local-setting
+	(not (equal local-setting 'prompt))
+      project-persist-auto-save-global)))
 
 (defun pp/disable-hooks ()
   "Disable all project-persist hooks (normally on disabling the minor mode)."

@@ -5,6 +5,7 @@
 (add-to-list 'load-path pp/root-path)
 
 (require 'project-persist)
+(require 'cl)
 
 (ert-deftest pp-test/empty-project-name-signals-error ()
   "Test that attempting to create a project with an empty name signals an error."
@@ -32,7 +33,7 @@
        (project-name "test-project-name")
        (project-root-dir "/test/project-root-dir"))
     (flet ((pp/write-to-settings (settings-file settings-string)
-               (should (equal settings-file "/test/settings-dir/pp-settings.txt"))))
+				 (should (equal settings-file "/test/settings-dir/pp-settings.txt"))))
       (pp/project-write settings-dir))))
 
 (ert-deftest pp-test/settings-written-correctly ()
@@ -45,9 +46,9 @@
        (project-root-dir "/test/project-root-dir")
        (settings-text "\n#s(hash-table size 65 test equal rehash-size 1.5 rehash-threshold 0.8 data (root-dir \"/test/project-root-dir\" name \"test-project-name\"))\n"))
     (flet ((pp/write-to-settings (settings-file settings-string)
-                                 (with-temp-buffer
-                                   (insert settings-string)
-                                   (should (equal (buffer-string) settings-text)))))
+				 (with-temp-buffer
+				   (insert settings-string)
+				   (should (equal (buffer-string) settings-text)))))
       (pp/settings-set 'root-dir project-root-dir)
       (pp/settings-set 'name project-name)
       (pp/project-write "/test-settings-dir"))))
@@ -62,9 +63,9 @@
        (project-root-dir "/test/project-root-dir")
        (settings-text "\n#s(hash-table size 65 test equal rehash-size 1.5 rehash-threshold 0.8 data (root-dir \"/test/project-root-dir\" name \"test-project-name\" test \"test setting\"))\n"))
     (flet ((pp/write-to-settings (settings-file settings-string)
-                                 (with-temp-buffer
-                                   (insert settings-string)
-                                   (should (equal (buffer-string) settings-text)))))
+				 (with-temp-buffer
+				   (insert settings-string)
+				   (should (equal (buffer-string) settings-text)))))
       (pp/settings-set 'root-dir project-root-dir)
       (pp/settings-set 'name project-name)
       (add-to-list 'project-persist-additional-settings '(test . (lambda () (concat "test setting"))))
@@ -115,3 +116,38 @@
   (add-hook 'project-persist-before-load-hook (lambda () (concat "test")))
   (project-persist-mode -1)
   (should (equal nil project-persist-before-load-hook)))
+
+(ert-deftest pp-test/global-auto-save-setting-nil ()
+  "Test that the global auto-save setting is honoured when set to nil."
+  (project-persist-mode 1)
+  (let ((project-persist-auto-save-global nil)(prompt-called nil)(project-persist-current-project-name "test"))
+    (flet ((y-or-n-p (prompt) (setq prompt-called t))(pp/write-to-settings (sf ss) t)(pp/has-open-project () t))
+      (message (format "open? %s" (pp/has-open-project)))
+      (project-persist-close)
+      (should (equal t prompt-called)))))
+
+(ert-deftest pp-test/global-auto-save-setting-t ()
+  "Test that the global auto-save setting is honoured when set to t."
+  (project-persist-mode 1)
+  (let ((project-persist-auto-save-global t)(prompt-called nil)(project-persist-current-project-name "test"))
+    (flet ((y-or-n-p (prompt) (setq prompt-called t))(pp/write-to-settings (sf ss) t)(pp/has-open-project () t))
+      (project-persist-close)
+      (should (equal nil prompt-called)))))
+
+(ert-deftest pp-test/local-auto-save-setting-t ()
+  "Test that the local auto-save setting is honoured when set to t."
+  (project-persist-mode 1)
+  (let ((prompt-called nil)(project-persist-current-project-name "test"))
+    (pp/settings-set 'auto-save t)
+    (flet ((y-or-n-p (prompt) (setq prompt-called t))(pp/write-to-settings (sf ss) t)(pp/has-open-project () t))
+      (project-persist-close)
+      (should (equal nil prompt-called)))))
+
+(ert-deftest pp-test/local-auto-save-setting-prompt ()
+  "Test that the local auto-save setting is honoured when set to prompt."
+  (project-persist-mode 1)
+  (let ((prompt-called nil)(project-persist-current-project-name "test"))
+    (pp/settings-set 'auto-save 'prompt)
+    (flet ((y-or-n-p (prompt) (setq prompt-called t))(pp/write-to-settings (sf ss) t)(pp/has-open-project () t))
+      (project-persist-close)
+      (should (equal t prompt-called)))))
