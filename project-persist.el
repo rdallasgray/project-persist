@@ -211,7 +211,7 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
 (defun pp/offer-save-if-open-project ()
   "Offer to save the open project. Depending on the value of the variable
 `project-persist-auto-save-global' (which see) and the project setting 
-`auto-save', save the project without asking"
+`auto-save', save the project without asking."
   (when (pp/has-open-project)
     (let ((auto-save (pp/auto-save-value)))
       (when (or auto-save (y-or-n-p (format "Save project %s?" project-persist-current-project-name)))
