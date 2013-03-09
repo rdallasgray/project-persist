@@ -70,7 +70,7 @@
   :type 'sexp
   :group 'project-persist)
 
-(defcustom project-persist-auto-save-global nil
+(defcustom project-persist-auto-save-global t
   "If non-nil, automatically save projects without prompting.
 
 Can be overridden on a project-basis with
