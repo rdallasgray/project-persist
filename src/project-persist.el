@@ -1,10 +1,10 @@
 ;;; project-persist.el --- A minor mode to allow loading and saving of project settings.
 
-;; Copyright (C) 2012 Robert Dallas Gray
+;; Copyright (C) @YEAR Robert Dallas Gray
 
 ;; Author: Robert Dallas Gray
 ;; URL: https://github.com/rdallasgray/project-persist
-;; Version: 20120921.0955
+;; Version: @VERSION
 ;; Created: 2012-09-13
 ;; Keywords: project, persistence
 
@@ -29,30 +29,7 @@
 
 ;;; Commentary:
 ;;
-;; Project-persist is a simple and extensible package to allow persistence of project settings.
-;; It is intended as the foundation for a more capable infrastructure of project management.
-;; In the spirit of Emacs, it provides a lightweight way to do one thing: persist a list of
-;; projects across sessions.
-;;
-;; Interactive functions are provided to create, open, save, close and delete simple
-;; projects based on single root directories, using completion (with ido where available).
-;; Around each of these functions, hooks are provided so that other project management
-;; activities can take place. You may, for example, want to load or save your Emacs
-;; desktop along with the project's other settings, create a tags file, or enable another
-;; project-management solution such as projectile (https://github.com/bbatsov/projectile).
-;;
-;; Settings saved by default are a project name and root directory. It is simple to add
-;; other settings, by adding to the list project-persist-additional-settings:
-;;
-;; (add-to-list 'project-persist-additional-settings
-;;    '(my-setting . (lambda () (read-from-minibuffer "My setting: ")))
-;;
-;; Each member of the list should be a cons cell with car the name of the setting
-;; (as a symbol) and cdr a function to obtain the value of the setting.
-;; The function will be called when a project is created and the value set and saved accordingly,
-;; and can be retrieved when a project is loaded using (pp/settings-get KEY).
-;;
-;; See the README for more details.
+@COMMENTARY
 ;;
 ;;; Code:
 
