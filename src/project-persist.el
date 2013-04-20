@@ -198,7 +198,7 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
   "Get the auto-save setting; if set locally, use that, otherwise use the global setting."
   (let ((local-setting (pp/settings-get 'auto-save)))
     (if local-setting
-	(not (equal local-setting 'prompt))
+	(not (eq local-setting 'prompt))
       project-persist-auto-save-global)))
 
 (defun pp/disable-hooks ()
