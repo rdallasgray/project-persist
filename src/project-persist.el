@@ -177,7 +177,7 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
   "Delete the given project name."
   (interactive)
   (let ((name (pp/read-project-name)))
-    (when (equalp name project-persist-current-project-name)
+    (when (eq name project-persist-current-project-name)
       (error "Can't delete the currently open project. Please close the project first."))
     (let ((confirm (yes-or-no-p (format "Are you sure you want to delete project %s?" name))))
       (when confirm
@@ -265,7 +265,7 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
         (let ((dirs (directory-files settings-dir)))
           (while dirs
             (let ((dir (car dirs)))
-              (when (not (or (equalp dir ".") (equalp dir "..")))
+              (when (not (or (eq dir ".") (eq dir "..")))
                 (let ((settings (pp/get-settings-in-dirname dir)))
                   (when settings
                     (add-to-list 'project-list (gethash 'name settings)))))
@@ -284,7 +284,7 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
 
 (defun pp/has-open-project ()
   "Whether a project is currently open."
-  (not (equalp nil project-persist-current-project-name)))
+  (not (null project-persist-current-project-name)))
 
 (defun pp/project-exists (name)
   "Whether a project with the given name already exists (i.e., an appropriately-named directory
