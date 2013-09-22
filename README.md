@@ -15,8 +15,10 @@ create and save a tags file, or load another project-management solution such as
 By default, only a project's name and root directory are saved, but you can
 easily add other settings like this:
 
-```lisp (add-to-list 'project-persist-additional-settings '(my-setting . (lambda
-() (read-from-minibuffer "My setting: ")))) ```
+```lisp
+(add-to-list 'project-persist-additional-settings
+  '(my-setting . (lambda () (read-from-minibuffer "My setting: "))))
+```
 
 Each element of the list is a cons cell with car a symbol naming the new setting
 and cdr a function to obtain the value of the setting. The function will be
@@ -24,7 +26,9 @@ called during project creation and the setting's value saved as normal.
 
 The setting can be retrieved once a project is loaded by invoking:
 
-```lisp (pp/settings-get 'my-setting) ```
+```lisp
+(pp/settings-get 'my-setting)
+```
 
 Project-persist is intentionally lightweight, in the spirit of Emacs, so that it
 can be used to build a more complex project-management infrastructure tailored
@@ -34,4 +38,7 @@ functionality.
 
 It can be required and enabled as follows:
 
-```lisp (require 'project-persist) (project-persist-mode t) ```
+```lisp
+(require 'project-persist)
+(project-persist-mode t)
+```
