@@ -4,7 +4,7 @@
 
 ;; Author: Robert Dallas Gray
 ;; URL: https://github.com/rdallasgray/project-persist
-;; Version: 0.2.4
+;; Version: 0.2.5
 ;; Created: 2012-09-13
 ;; Keywords: project, persistence
 
@@ -78,7 +78,8 @@
 
 ;; Customize options
 (defgroup project-persist nil
-  "Settings related to project-persist, a package to enable simple persistence of project settings.")
+  "Settings related to project-persist, a package to enable simple persistence of project settings."
+  :group 'tools)
 
 (defcustom project-persist-settings-dir (concat user-emacs-directory "project-persist")
   "The directory in which project-persist will save project settings files."
@@ -96,7 +97,7 @@
 Can be overridden on a project-basis with
 \(pp/settings-set 'auto-save VALUE), where VALUE is t or 'prompt
 
-If the project setting `auto-save' is `t' or if the value of
+If the project setting `auto-save' is t or if the value of
 variable `project-persist-auto-save-global' is non-nil, save the
 project without prompting
 
@@ -142,7 +143,7 @@ If the project setting `auto-save' is 'prompt, always prompt before saving"
       (define-key prefix-map (kbd "s") 'project-persist-save)
       (define-key prefix-map (kbd "k") 'project-persist-close)
       (define-key prefix-map (kbd "d") 'project-persist-delete)
-      (define-key prefix-map (kbd "n") 'project-persist-create)      
+      (define-key prefix-map (kbd "n") 'project-persist-create)
       (define-key map project-persist-keymap-prefix prefix-map))
     map)
   "Keymap for project-persist-mode.")
@@ -159,9 +160,9 @@ If the project setting `auto-save' is 'prompt, always prompt before saving"
   "The directory in which settings for the current project are stored.")
 
 (defvar project-persist-additional-settings '()
-  "A list of additional keys to store in the project settings file (the defaults are 'name and 'root-dir).
-The format should be a cons cell ('key . read-function); e.g. ('name . (lambda () (read-from-buffer \"Project name: \"))).")
-
+  "A list of additional keys to store in the project settings file.
+The defaults are 'name and 'root-dir. The format should be a cons cell:
+\('key . read-function); e.g. ('name . (lambda () (read-from-buffer \"Project name: \"))).")
 
 ;; Internal variables
 (defvar pp/lighter nil
@@ -229,9 +230,9 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
 
 ;; Internal functions
 (defun pp/offer-save-if-open-project ()
-  "Offer to save the open project. Depending on the value of the variable
-`project-persist-auto-save-global' (which see) and the project setting 
-`auto-save', save the project without asking."
+  "Offer to save the open project.
+Depending on the value of the variable` project-persist-auto-save-global'
+and the project setting `auto-save', save the project without asking."
   (when (pp/has-open-project)
     (let ((auto-save (pp/auto-save-value)))
       (when (or auto-save (y-or-n-p (format "Save project %s?" project-persist-current-project-name)))
@@ -260,15 +261,15 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
   (clrhash pp/settings-hash))
 
 (defun pp/settings-get (key)
-  "Get the value of setting key."
+  "Get the value of setting KEY."
   (gethash key pp/settings-hash))
 
 (defun pp/settings-set (key value)
-  "Set project setting key to value."
+  "Set project setting KEY to VALUE."
   (puthash key value pp/settings-hash))
 
 (defun pp/read-project-name ()
-  "Read the project name from user input using a choice of completing-read or ido-completing-read."
+  "Read the project name from user input using a choice of `completing-read' or `ido-completing-read'."
    (let ((func 'completing-read))
      (when (featurep 'ido) (setq func 'ido-completing-read))
      (funcall func "Project name: " (pp/project-list) nil t)))
@@ -281,7 +282,7 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
   (when func (funcall func)))
 
 (defun pp/project-destroy (name)
-  "Delete the settings directory for the given project name."
+  "Delete the settings directory for the given project NAME."
   (let ((settings-dir (pp/settings-dir-from-name name)))
     (delete-directory settings-dir t t)
     (pp/invalidate-project-list-cache)))
@@ -317,7 +318,7 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
   pp/project-list-cache)
 
 (defun pp/set-project-list-cache (project-list)
-  "Set the cached project list to project-list and make it valid."
+  "Set the cached project list to PROJECT-LIST and make it valid."
   (setq pp/project-list-cache project-list)
   (setq pp/project-list-cache-valid t))
 
@@ -330,14 +331,15 @@ The format should be a cons cell ('key . read-function); e.g. ('name . (lambda (
   (not (null project-persist-current-project-name)))
 
 (defun pp/project-exists (name)
-  "Whether a project with the given name already exists (i.e., an appropriately-named directory
-exists in the project settings directory, and a valid settings file exists within that directory)."
+  "Whether a project with the given NAME already exists.
+\(I.e., an appropriately-named directory exists in the project settings
+directory, and a valid settings file exists within that directory)."
   (let ((settings-dir (pp/settings-dir-from-name name)))
     (let ((settings-file (expand-file-name pp/settings-file-name settings-dir)))
       (file-exists-p settings-file))))
 
 (defun pp/get-settings-in-dirname (dirname)
-  "Return the settings from the settings file in the given directory, or nil."
+  "Return the settings from the settings file in the given DIRNAME, or nil."
   (let ((dir (expand-file-name dirname project-persist-settings-dir))(settings nil))
     (if (file-directory-p dir)
         (let ((settings-file (expand-file-name pp/settings-file-name dir)))
@@ -347,7 +349,7 @@ exists in the project settings directory, and a valid settings file exists withi
     settings))
 
 (defun pp/project-setup (root-dir name)
-  "Set up a project with name name and root directory root-dir."
+  "Set up a project with root directory ROOT-DIR and name NAME."
   (if (string= name "") (error "Project name is empty"))
   (if (pp/project-exists name) (error "Project %s already exists." name))
   (run-hooks 'project-persist-before-create-hook)
@@ -363,6 +365,7 @@ exists in the project settings directory, and a valid settings file exists withi
     (run-hooks 'project-persist-after-create-hook)))
 
 (defun pp/set-additional-settings ()
+  "Set any values given in `project-persist-additional-settings'."
   (let ((settings-keys project-persist-additional-settings))
     (while settings-keys
       (let ((setting (car settings-keys)))
@@ -371,7 +374,7 @@ exists in the project settings directory, and a valid settings file exists withi
           (setq settings-keys (cdr settings-keys)))))))
 
 (defun pp/project-open (name)
-  "Open the project named name."
+  "Open the project named NAME."
   (let ((settings-file
          (expand-file-name
           pp/settings-file-name (pp/settings-dir-from-name name))))
@@ -380,7 +383,7 @@ exists in the project settings directory, and a valid settings file exists withi
       (pp/apply-project-settings settings))))
 
 (defun pp/apply-project-settings (settings)
-  "Make the settings read from the project settings file current."
+  "Make the SETTINGS read from the project settings file current."
   (run-hooks 'project-persist-before-load-hook)
   (setq pp/settings-hash settings)
   (setq project-persist-current-project-name (gethash 'name settings))
@@ -391,35 +394,36 @@ exists in the project settings directory, and a valid settings file exists withi
   (run-hooks 'project-persist-after-load-hook))
 
 (defun pp/get-settings-file-contents (settings-file)
-  "Read and return contents of settings-file"
+  "Read and return contents of SETTINGS-FILE."
   (with-temp-buffer
     (insert-file-contents settings-file)
     (buffer-string)))
 
 (defun pp/read-settings-from-string (settings-string)
-  "Read and return the project settings hash from the given file."
+  "Read and return the project settings hash from the given SETTINGS-STRING."
   (read settings-string))
 
 (defun pp/project-write (settings-dir)
-  "Write project settings to the given settings directory."
+  "Write project settings to the given SETTINGS-DIR."
   (let ((settings-file (expand-file-name pp/settings-file-name settings-dir)))
     (with-temp-buffer
       (print pp/settings-hash (current-buffer))
       (pp/write-to-settings settings-file (buffer-string)))))
 
 (defun pp/write-to-settings (settings-file settings-string)
-  "Write the given string representing project settings to the given file."
+  "Write to SETTINGS-FILE with the given SETTINGS-STRING."
   (run-hooks 'project-persist-before-save-hook)
   (with-temp-file settings-file
     (insert settings-string))
   (run-hooks 'project-persist-after-save-hook))
 
 (defun pp/settings-dir-from-name (name)
-  "Return the settings directory for the project based on its name."
+  "Return the settings directory for the project based on its NAME."
   (concat (expand-file-name name project-persist-settings-dir)))
 
 (defun pp/make-settings-dir (settings-dir)
-  "Create the project settings directory if it doesn't already exist, creating the project-persist root settings directory if necessary."
+  "Create the project SETTINGS-DIR if it doesn't already exist.
+Create the project-persist root settings directory if necessary."
   (unless (file-exists-p project-persist-settings-dir)
     (make-directory project-persist-settings-dir))
   (unless (file-exists-p settings-dir)
