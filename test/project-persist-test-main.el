@@ -1,6 +1,6 @@
 (let ((current-directory (file-name-directory (if load-file-name load-file-name buffer-file-name))))
   (setq pp/test-path (expand-file-name "." current-directory))
-  (setq pp/root-path (expand-file-name "../lib" current-directory)))
+  (setq pp/root-path (expand-file-name ".." current-directory)))
 
 (add-to-list 'load-path pp/root-path)
 
