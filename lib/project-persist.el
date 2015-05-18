@@ -134,8 +134,6 @@ If the project setting `auto-save' is 'prompt, always prompt before saving"
 (defvar project-persist-after-close-hook nil
   "A hook to be run after project-persist closes a project.")
 
-
-;; Keymap
 (defvar project-persist-mode-map
   (let ((map (make-sparse-keymap)))
     (let ((prefix-map (make-sparse-keymap)))
@@ -180,8 +178,12 @@ The defaults are 'name and 'root-dir. The format should be a cons cell:
 (defvar pp/settings-hash (make-hash-table :test 'equal)
   "Settings hashtable to be written to the project settings file.")
 
+(defun project-persist-find ()
+  "Find and load the given project name."
+  (interactive)
+  (pp/offer-save-if-open-project)
+  (pp/project-open (pp/read-project-name)))
 
-;; Interactive functions
 (defun project-persist-create ()
   "Create a new project-persist project, giving a project name and root directory."
   (interactive)
@@ -197,26 +199,6 @@ The defaults are 'name and 'root-dir. The format should be a cons cell:
             (pp/project-open name))
         (error (pp/signal-error err))))))
 
-(defun project-persist-save ()
-  "Save the project settings and run relevant hooks."
-  (interactive)
-  (when (not (pp/has-open-project)) (error "No project is currently open."))
-  (let ((settings-dir (pp/settings-dir-from-name project-persist-current-project-name)))
-    (pp/project-write settings-dir)))
-
-(defun project-persist-find ()
-  "Find and load the given project name."
-  (interactive)
-  (pp/offer-save-if-open-project)
-  (pp/project-open (pp/read-project-name)))
-
-(defun project-persist-close ()
-  "Close the currently open project."
-  (interactive)
-  (when (not (pp/has-open-project)) (error "No project is currently open."))
-  (pp/offer-save-if-open-project)
-  (pp/close-current-project))
-
 (defun project-persist-delete ()
   "Delete the given project name."
   (interactive)
@@ -226,6 +208,20 @@ The defaults are 'name and 'root-dir. The format should be a cons cell:
     (let ((confirm (yes-or-no-p (format "Are you sure you want to delete project %s?" name))))
       (when confirm
         (pp/project-destroy name)))))
+
+(defun project-persist-save ()
+  "Save the project settings and run relevant hooks."
+  (interactive)
+  (when (not (pp/has-open-project)) (error "No project is currently open."))
+  (let ((settings-dir (pp/settings-dir-from-name project-persist-current-project-name)))
+    (pp/project-write settings-dir)))
+
+(defun project-persist-close ()
+  "Close the currently open project."
+  (interactive)
+  (when (not (pp/has-open-project)) (error "No project is currently open."))
+  (pp/offer-save-if-open-project)
+  (pp/close-current-project))
 
 
 ;; Internal functions
