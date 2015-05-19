@@ -4,7 +4,7 @@
 
 ;; Author: Robert Dallas Gray
 ;; URL: https://github.com/rdallasgray/project-persist
-;; Version: 0.3.1
+;; Version: 0.3.2
 ;; Created: 2012-09-13
 ;; Keywords: project, persistence
 
@@ -376,11 +376,11 @@ directory, and a valid settings file exists within that directory)."
           project-persist--settings-file-name (project-persist--settings-dir-from-name name))))
     (let ((settings (project-persist--read-settings-from-string
                      (project-persist--get-settings-file-contents settings-file))))
+      (project-persist--offer-save-if-open-project)
       (project-persist--apply-project-settings settings))))
 
 (defun project-persist--apply-project-settings (settings)
   "Make the SETTINGS read from the project settings file current."
-  (project-persist--offer-save-if-open-project)
   (run-hooks 'project-persist-before-load-hook)
   (setq project-persist--settings-hash settings)
   (setq project-persist-current-project-name (gethash 'name settings))
