@@ -8,7 +8,8 @@
 (require 'cl)
 
 (ert-deftest pp-test/empty-project-name-signals-error ()
-  "Test that attempting to create a project with an empty name signals an error."
+  "Test that attemp
+  ting to create a project with an empty name signals an error."
   (project-persist-mode 1)
   (flet ((project-persist--make-settings-dir (sd) t) (project-persist--project-write (n rd sd) t))
     (should-error (project-persist--project-setup "/test" ""))))
