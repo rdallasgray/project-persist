@@ -34,7 +34,7 @@
        (project-name "test-project-name")
        (project-root-dir "/test/project-root-dir"))
     (flet ((project-persist--write-to-settings (settings-file settings-string)
-				 (should (equal settings-file "/test/settings-dir/pp-settings.txt"))))
+                                               (should (equal settings-file "/test/settings-dir/pp-settings.txt"))))
       (project-persist--project-write settings-dir))))
 
 (ert-deftest pp-test/settings-written-correctly ()
@@ -47,9 +47,9 @@
        (project-root-dir "/test/project-root-dir")
        (settings-text "\n#s(hash-table size 65 test equal rehash-size 1.5 rehash-threshold 0.8 data (root-dir \"/test/project-root-dir\" name \"test-project-name\"))\n"))
     (flet ((project-persist--write-to-settings (settings-file settings-string)
-				 (with-temp-buffer
-				   (insert settings-string)
-				   (should (equal (buffer-string) settings-text)))))
+                                               (with-temp-buffer
+                                                 (insert settings-string)
+                                                 (should (equal (buffer-string) settings-text)))))
       (project-persist--settings-set 'root-dir project-root-dir)
       (project-persist--settings-set 'name project-name)
       (project-persist--project-write "/test-settings-dir"))))
@@ -64,9 +64,9 @@
        (project-root-dir "/test/project-root-dir")
        (settings-text "\n#s(hash-table size 65 test equal rehash-size 1.5 rehash-threshold 0.8 data (root-dir \"/test/project-root-dir\" name \"test-project-name\" test \"test setting\"))\n"))
     (flet ((project-persist--write-to-settings (settings-file settings-string)
-				 (with-temp-buffer
-				   (insert settings-string)
-				   (should (equal (buffer-string) settings-text)))))
+                                               (with-temp-buffer
+                                                 (insert settings-string)
+                                                 (should (equal (buffer-string) settings-text)))))
       (project-persist--settings-set 'root-dir project-root-dir)
       (project-persist--settings-set 'name project-name)
       (add-to-list 'project-persist-additional-settings '(test . (lambda () (concat "test setting"))))
@@ -83,25 +83,25 @@
       (should (equal (gethash 'test settings) "test setting")))))
 
 (ert-deftest pp-test/settings-applied-correctly ()
-  "Test that project settings are applied correctly."
-  (project-persist-mode 1)
-  (let ((settings-string "\n#s(hash-table size 65 test equal rehash-size 1.5 rehash-threshold 0.8 data (root-dir \"/test/project-root-dir\" name \"test-project-name\" test \"test setting\"))\n"))
-    (let ((settings (project-persist--read-settings-from-string settings-string)))
-      (flet ((add-hook (hook func)))
-        (project-persist--apply-project-settings settings)
-        (should (equal project-persist-current-project-name "test-project-name"))
-        (should (equal project-persist-current-project-root-dir "/test/project-root-dir"))))))
+             "Test that project settings are applied correctly."
+             (project-persist-mode 1)
+             (let ((settings-string "\n#s(hash-table size 65 test equal rehash-size 1.5 rehash-threshold 0.8 data (root-dir \"/test/project-root-dir\" name \"test-project-name\" test \"test setting\"))\n"))
+               (let ((settings (project-persist--read-settings-from-string settings-string)))
+                 (flet ((add-hook (hook func)))
+                   (project-persist--apply-project-settings settings)
+                   (should (equal project-persist-current-project-name "test-project-name"))
+                   (should (equal project-persist-current-project-root-dir "/test/project-root-dir"))))))
 
 (ert-deftest pp-test/settings-read-from-hash-correctly ()
-  "Test that settings are stored in the hash and read back correctly via the project-persist--settings-get method."
-  (project-persist-mode 1)
-  (let ((settings-string "\n#s(hash-table size 65 test equal rehash-size 1.5 rehash-threshold 0.8 data (root-dir \"/test/project-root-dir\" name \"test-project-name\" test \"test setting\"))\n"))
-    (let ((settings (project-persist--read-settings-from-string settings-string)))
-      (flet ((add-hook (hook func)))
-        (project-persist--apply-project-settings settings)
-        (should (equal (project-persist--settings-get 'name) "test-project-name"))
-        (should (equal (project-persist--settings-get 'root-dir) "/test/project-root-dir"))
-        (should (equal (project-persist--settings-get 'test) "test setting"))))))
+             "Test that settings are stored in the hash and read back correctly via the project-persist--settings-get method."
+             (project-persist-mode 1)
+             (let ((settings-string "\n#s(hash-table size 65 test equal rehash-size 1.5 rehash-threshold 0.8 data (root-dir \"/test/project-root-dir\" name \"test-project-name\" test \"test setting\"))\n"))
+               (let ((settings (project-persist--read-settings-from-string settings-string)))
+                 (flet ((add-hook (hook func)))
+                   (project-persist--apply-project-settings settings)
+                   (should (equal (project-persist--settings-get 'name) "test-project-name"))
+                   (should (equal (project-persist--settings-get 'root-dir) "/test/project-root-dir"))
+                   (should (equal (project-persist--settings-get 'test) "test setting"))))))
 
 (ert-deftest pp-test/project-closed-correctly ()
   "Test that variables are set to nil when a project is closed."
@@ -125,7 +125,6 @@
   (project-persist-mode 1)
   (let ((project-persist-auto-save-global nil) (prompt-called nil) (project-persist-current-project-name "test"))
     (flet ((y-or-n-p (prompt) (setq prompt-called t)) (project-persist--write-to-settings (sf ss) t) (project-persist--has-open-project () t))
-      (message (format "open? %s" (project-persist--has-open-project)))
       (project-persist-close)
       (should (equal t prompt-called)))))
 
