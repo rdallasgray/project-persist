@@ -1,10 +1,10 @@
 ;;; project-persist.el --- A minor mode to allow loading and saving of project settings.
 
-;; Copyright (C) 2015 Robert Dallas Gray
+;; Copyright (C) 2018 Robert Dallas Gray
 
 ;; Author: Robert Dallas Gray
 ;; URL: https://github.com/rdallasgray/project-persist
-;; Version: 0.3.2
+;; Version: 1.0.0
 ;; Created: 2012-09-13
 ;; Keywords: project, persistence
 
