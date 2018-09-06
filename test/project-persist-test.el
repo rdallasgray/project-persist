@@ -45,11 +45,11 @@
   (let
       ((project-name "test-project-name")
        (project-root-dir "/test/project-root-dir")
-       (settings-text "\n#s(hash-table size 65 test equal rehash-size 1.5 rehash-threshold 0.8 data (root-dir \"/test/project-root-dir\" name \"test-project-name\"))\n"))
+       (settings-text "(root-dir \"/test/project-root-dir\" name \"test-project-name\")"))
     (flet ((project-persist--write-to-settings (settings-file settings-string)
                                                (with-temp-buffer
                                                  (insert settings-string)
-                                                 (should (equal (buffer-string) settings-text)))))
+                                                 (should (string-match-p settings-text (buffer-string))))))
       (project-persist--settings-set 'root-dir project-root-dir)
       (project-persist--settings-set 'name project-name)
       (project-persist--project-write "/test-settings-dir"))))
@@ -62,11 +62,11 @@
   (let
       ((project-name "test-project-name")
        (project-root-dir "/test/project-root-dir")
-       (settings-text "\n#s(hash-table size 65 test equal rehash-size 1.5 rehash-threshold 0.8 data (root-dir \"/test/project-root-dir\" name \"test-project-name\" test \"test setting\"))\n"))
+       (settings-text "(root-dir \"/test/project-root-dir\" name \"test-project-name\" test \"test setting\")"))
     (flet ((project-persist--write-to-settings (settings-file settings-string)
                                                (with-temp-buffer
                                                  (insert settings-string)
-                                                 (should (equal (buffer-string) settings-text)))))
+                                                 (should (string-match-p settings-text (buffer-string))))))
       (project-persist--settings-set 'root-dir project-root-dir)
       (project-persist--settings-set 'name project-name)
       (add-to-list 'project-persist-additional-settings '(test . (lambda () (concat "test setting"))))
