@@ -4,7 +4,7 @@
 
 ;; Author: Robert Dallas Gray
 ;; URL: https://github.com/rdallasgray/project-persist
-;; Version: 1.0.0
+;; Version: 1.0.1
 ;; Created: 2012-09-13
 ;; Keywords: project, persistence
 
@@ -232,13 +232,13 @@ and the project setting `auto-save', save the project without asking."
   (when (project-persist--has-open-project)
     (let ((auto-save (project-persist--auto-save-value)))
       (when (or auto-save (y-or-n-p (format "Save project %s?" project-persist-current-project-name)))
-	(project-persist-save)))))
+  (project-persist-save)))))
 
 (defun project-persist--auto-save-value ()
   "Get the auto-save setting; if set locally, use that, otherwise use the global setting."
   (let ((local-setting (project-persist--settings-get 'auto-save)))
     (if local-setting
-	(not (eq local-setting 'prompt))
+  (not (eq local-setting 'prompt))
       project-persist-auto-save-global)))
 
 (defun project-persist--disable-hooks ()
@@ -267,7 +267,8 @@ and the project setting `auto-save', save the project without asking."
 (defun project-persist--read-project-name ()
   "Read the project name from user input using a choice of `completing-read' or `ido-completing-read'."
    (let ((func 'completing-read))
-     (when (featurep 'ido) (setq func 'ido-completing-read))
+     (cond ((featurep 'ivy) (setq func 'ivy-completing-read))
+           ((featurep 'ido) (setq func 'ido-completing-read)))
      (funcall func "Project name: " (project-persist--project-list) nil t)))
 
 (defun project-persist--signal-error (err &optional func)
